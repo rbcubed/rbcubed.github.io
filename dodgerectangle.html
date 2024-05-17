@@ -74,7 +74,7 @@
             if (rectangleX < -rectangleWidth) {
                 rectangleX = SCREEN_WIDTH;
                 rectangleY = Math.floor(Math.random() * (SCREEN_HEIGHT - rectangleHeight));
-                score++;
+                score += 50;
             }
         }
 
@@ -103,8 +103,7 @@
         }
 
         function drawScore() {
-            const finalScore = Math.floor(score / 63);
-            drawText(finalScore, gameFont2, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100, lightGrey);
+            drawText(score, gameFont2, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100, 'red');
         }
 
         function newGame() {
@@ -141,7 +140,7 @@
         });
 
         if (!gameStarted) {
-            drawText('Click space to start', gameFont2, SCREEN_WIDTH / 2 - 175, SCREEN_HEIGHT / 2, lightGrey);
+            drawText('Click space to start', gameFont2, SCREEN_WIDTH / 2 - 175, SCREEN_HEIGHT / 2, 'red');
         }
     </script>
 </body>
