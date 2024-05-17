@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Basket Ball Game</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 2px solid #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1100" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const SCREEN_WIDTH = 1100;
+        const SCREEN_HEIGHT = 800;
+        let BALL_Y_SPEED = 12;
+        let PLAYER_SPEED = 0;
+        let score = 0;
+        let lives = 3;
+        let game_over_text = 'GAME OVER!';
+        const game_font = '70px Arial';
+        const game_font2 = '35px Arial';
+        let ball = { x: Math.random() * 1100, y: 0, width: 45, height: 45 };
+        let basket = { x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT - 100, width: 70, height: 70 };
+
+        function ball_animation() {
+            ball.y += BALL_Y_SPEED;
+            if (ball.y >= SCREEN_HEIGHT) {
+                lives--;
+                ball_restart();
+            }
+            if (lives <= 0) {
+                end_game();
+            }
+            if (ball.x + ball.width > basket.x && ball.x < basket.x + basket.width && ball.y + ball.height > basket.y && ball.y < basket.y + basket.height) {
+                score++;
+                ball_restart();
+            }
+        }
+
+        function player_animation() {
+            basket.x += PLAYER_SPEED;
+            if (basket.x + basket.width > SCREEN_WIDTH) {
+                basket.x = SCREEN_WIDTH - basket.width;
+            }
+            if (basket.x < 0) {
+                basket.x = 0;
+            }
+        }
+
+        function ball_restart() {
+            ball.x = Math.random() * 1100;
+            ball.y = 0;
+        }
+
+        function end_game() {
+            BALL_Y_SPEED = 0;
+            PLAYER_SPEED = 0;
+            ctx.fillStyle = '#121212';
+            ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            ctx.fillStyle = '#ff0000';
+            ctx.font = game_font;
+            ctx.fillText(game_over_text, SCREEN_WIDTH / 2 - 175, SCREEN_HEIGHT / 2);
+        }
+
+        function score_display() {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = game_font2;
+            ctx.fillText('SCORE: ' + score, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100);
+        }
+
+        function lives_display() {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = game_font2;
+            ctx.fillText('LIVES: ' + lives, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 150);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            ball_animation();
+            player_animation();
+            ctx.fillStyle = '#ff7f50';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+            score_display();
+            lives_display();
+            requestAnimationFrame(draw);
+        }
+
+        // Add event listeners for arrow key presses
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') {
+                PLAYER_SPEED = -20; // Move left 2x faster
+            } else if (event.key === 'ArrowRight') {
+                PLAYER_SPEED = 20; // Move right 2x faster
+            }
+        });
+
+        document.addEventListener('keyup', function(event) {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                PLAYER_SPEED = 0;
+            }
+        });
+
+        draw();
+    </script>
+</body>
+</html>
