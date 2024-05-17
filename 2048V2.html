@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>2048 Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            background-color: #faf8ef;
+            margin: 0;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 100px);
+            grid-template-rows: repeat(4, 100px);
+            gap: 10px;
+            background-color: #bbada0;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #cdc1b4;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            color: #776e65;
+        }
+
+        .cell[data-value="2"] { background-color: #eee4da; color: #776e65; }
+        .cell[data-value="4"] { background-color: #ede0c8; color: #776e65; }
+        .cell[data-value="8"] { background-color: #f2b179; color: #f9f6f2; }
+        .cell[data-value="16"] { background-color: #f59563; color: #f9f6f2; }
+        .cell[data-value="32"] { background-color: #f67c5f; color: #f9f6f2; }
+        .cell[data-value="64"] { background-color: #f65e3b; color: #f9f6f2; }
+        .cell[data-value="128"] { background-color: #edcf72; color: #f9f6f2; }
+        .cell[data-value="256"] { background-color: #edcc61; color: #f9f6f2; }
+        .cell[data-value="512"] { background-color: #edc850; color: #f9f6f2; }
+        .cell[data-value="1024"] { background-color: #edc53f; color: #f9f6f2; }
+        .cell[data-value="2048"] { background-color: #edc22e; color: #f9f6f2; }
+    </style>
+</head>
+<body>
+    <h1>2048 Game</h1>
+    <div id="game-board">
+        <!-- 16 cells for the 4x4 grid -->
+        <div class="cell" id="cell-0"></div>
+        <div class="cell" id="cell-1"></div>
+        <div class="cell" id="cell-2"></div>
+        <div class="cell" id="cell-3"></div>
+        <div class="cell" id="cell-4"></div>
+        <div class="cell" id="cell-5"></div>
+        <div class="cell" id="cell-6"></div>
+        <div class="cell" id="cell-7"></div>
+        <div class="cell" id="cell-8"></div>
+        <div class="cell" id="cell-9"></div>
+        <div class="cell" id="cell-10"></div>
+        <div class="cell" id="cell-11"></div>
+        <div class="cell" id="cell-12"></div>
+        <div class="cell" id="cell-13"></div>
+        <div class="cell" id="cell-14"></div>
+        <div class="cell" id="cell-15"></div>
+    </div>
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const cells = Array.from(document.getElementsByClassName('cell'));
+        let board = Array(16).fill(0);
+        let score = 0;
+        let direction = 'right';
+
+        document.addEventListener('keydown', handleKeyPress);
+
+        function handleKeyPress(event) {
+            switch (event.key) {
+                case 'ArrowUp':
+                    moveUp();
+                    break;
+                case 'ArrowDown':
+                    moveDown();
+                    break;
+                case 'ArrowLeft':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                    moveRight();
+                    break;
+            }
+            updateBoard();
+        }
+
+        function moveUp() {
+            for (let c = 0; c < 4; c++) {
+                let column = [board[c], board[c + 4], board[c + 8], board[c + 12]];
+                let newColumn = slide(column);
+                for (let r = 0; r < 4; r++) {
+                    board[c + r * 4] = newColumn[r];
+                }
+            }
+        }
+
+        function moveDown() {
+            for (let c = 0; c < 4; c++) {
+                let column = [board[c + 12], board[c + 8], board[c + 4], board[c]];
+                let newColumn = slide(column);
+                for (let r = 0; r < 4; r++) {
+                    board[c + (3 - r) * 4] = newColumn[r];
+                }
+            }
+        }
+
+        function moveLeft() {
+            for (let r = 0; r < 4; r++) {
+                let row = [board[r * 4], board[r * 4 + 1], board[r * 4 + 2], board[r * 4 + 3]];
+                let newRow = slide(row);
+                for (let c = 0; c < 4; c++) {
+                    board[r * 4 + c] = newRow[c];
+                }
+            }
+        }
+
+        function moveRight() {
+            for (let r = 0; r < 4; r++) {
+                let row = [board[r * 4 + 3], board[r * 4 + 2], board[r * 4 + 1], board[r * 4]];
+                let newRow = slide(row);
+                for (let c = 0; c < 4; c++) {
+                    board[r * 4 + (3 - c)] = newRow[c];
+                }
+            }
+        }
+
+        function slide(array) {
+            let newArray = array.filter(val => val);
+            let missing = 4 - newArray.length;
+            let zeros = Array(missing).fill(0);
+            newArray = newArray.concat(zeros);
+
+            for (let i = 0; i < 3; i++) {
+                if (newArray[i] === newArray[i + 1]) {
+                    newArray[i] *= 2;
+                    newArray[i + 1] = 0;
+                    score += newArray[i];
+                }
+            }
+
+            newArray = newArray.filter(val => val);
+            missing = 4 - newArray.length;
+            zeros = Array(missing).fill(0);
+            newArray = newArray.concat(zeros);
+
+            return newArray;
+        }
+
+        function updateBoard() {
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].textContent = board[i] === 0 ? '' : board[i];
+                cells[i].setAttribute('data-value', board[i]);
+            }
+            spawnNewTile();
+        }
+
+        function spawnNewTile() {
+            let emptyCells = [];
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === 0) {
+                    emptyCells.push(i);
+                }
+            }
+            if (emptyCells.length > 0) {
+                let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                board[randomIndex] = Math.random() > 0.1 ? 2 : 4;
+                cells[randomIndex].textContent = board[randomIndex];
+                cells[randomIndex].setAttribute('data-value', board[randomIndex]);
+            }
+        }
+
+        updateBoard();
+    </script>
+</body>
+</html>

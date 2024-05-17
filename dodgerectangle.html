@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flappy Bird</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ADD8E6; /* Pastel Blue */
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1280" height="960"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const SCREEN_WIDTH = 1280;
+        const SCREEN_HEIGHT = 960;
+        const RECTANGLE_SPEED = 10;
+        const BIRD_SPEED = 0;
+        const JUMP_SPEED = -10;
+        const GRAVITY = 0.5;
+        const rectangleWidth = 50;
+        const rectangleHeight = 400;
+        const red = '#FF0000';
+        const gameOverText = 'GAME OVER!';
+        const gameFont = '70px Arial';
+        const gameFont2 = '35px Arial';
+        const lightGrey = '#C8C8C8';
+        const yellow = '#FFFF00'; // Yellow
+        const green = '#7FFF00'; // Slightly Darker Green
+        
+        let rectangleX = SCREEN_WIDTH - 40;
+        let rectangleY = Math.floor(Math.random() * (SCREEN_HEIGHT - rectangleHeight));
+        let birdX = SCREEN_WIDTH / 2 - 15;
+        let birdY = SCREEN_HEIGHT / 2 - 15;
+        let birdSpeed = BIRD_SPEED;
+        let score = 0;
+        let gameover = true;
+        let gameStarted = false;
+
+        function drawBird() {
+            ctx.fillStyle = yellow; // Yellow
+            ctx.beginPath();
+            ctx.arc(birdX + 15, birdY + 15, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+
+            birdSpeed += GRAVITY;
+            birdY += birdSpeed;
+            
+            if (birdY < 0 || birdY > SCREEN_HEIGHT - 65) {
+                endGame();
+            }
+        }
+
+        function drawRectangle() {
+            ctx.fillStyle = green;
+            ctx.fillRect(rectangleX, rectangleY, rectangleWidth, rectangleHeight);
+            rectangleX -= RECTANGLE_SPEED;
+
+            if (rectangleX < -rectangleWidth) {
+                rectangleX = SCREEN_WIDTH;
+                rectangleY = Math.floor(Math.random() * (SCREEN_HEIGHT - rectangleHeight));
+                score++;
+            }
+        }
+
+        function drawText(text, font, x, y, color) {
+            ctx.fillStyle = color;
+            ctx.font = font;
+            ctx.fillText(text, x, y);
+        }
+
+        function collisions() {
+            if (birdX < rectangleX + rectangleWidth &&
+                birdX + 65 > rectangleX &&
+                birdY < rectangleY + rectangleHeight &&
+                birdY + 65 > rectangleY) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            birdSpeed = 0;
+            gameover = true;
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            drawText(gameOverText, gameFont, SCREEN_WIDTH / 2 - 175, SCREEN_HEIGHT / 2, red);
+            drawScore();
+        }
+
+        function drawScore() {
+            const finalScore = Math.floor(score / 63);
+            drawText(finalScore, gameFont2, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 100, lightGrey);
+        }
+
+        function newGame() {
+            rectangleX = SCREEN_WIDTH - 40;
+            rectangleY = Math.floor(Math.random() * (SCREEN_HEIGHT - rectangleHeight));
+            birdX = SCREEN_WIDTH / 2 - 15;
+            birdY = SCREEN_HEIGHT / 2 - 15;
+            birdSpeed = BIRD_SPEED;
+            score = 0;
+            gameover = false;
+        }
+
+        function gameLoop() {
+            if (gameStarted) {
+                if (!gameover) {
+                    ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    drawBird();
+                    drawRectangle();
+                    collisions();
+                    drawScore();
+                }
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === ' ' && !gameStarted) {
+                gameStarted = true;
+                newGame();
+                gameLoop();
+            } else if (event.key === ' ' && !gameover) {
+                birdSpeed = JUMP_SPEED;
+            }
+        });
+
+        if (!gameStarted) {
+            drawText('Click space to start', gameFont2, SCREEN_WIDTH / 2 - 175, SCREEN_HEIGHT / 2, lightGrey);
+        }
+    </script>
+</body>
+</html>

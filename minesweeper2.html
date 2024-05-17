@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Minesweeper Game</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        .grid {
+            display: grid;
+            gap: 1px;
+        }
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            font-weight: bold;
+            font-size: 20px;
+            border: 1px solid black;
+            user-select: none;
+            cursor: pointer;
+        }
+        .cell.sunken {
+            background-color: grey;
+        }
+        .cell.bomb {
+            background-color: red;
+        }
+        .cell.flagged::after {
+            content: "F";
+        }
+        .bomb-count {
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bomb-count" id="bombCount"></div>
+<div id="game"></div>
+
+<script>
+    const height = parseInt(prompt("Enter the height of the board: "));
+    const width = parseInt(prompt("Enter the width of the board: "));
+    const mines = parseInt(prompt("Enter the number of mines: "));
+
+    let numBombs = mines;
+    let copyBombs = mines;
+    const bombCountLabel = document.getElementById("bombCount");
+    bombCountLabel.textContent = numBombs;
+
+    const gameDiv = document.getElementById('game');
+    gameDiv.classList.add('grid');
+    gameDiv.style.gridTemplateColumns = `repeat(${width}, 40px)`;
+    gameDiv.style.gridTemplateRows = `repeat(${height}, 40px)`;
+
+    const cells = [];
+    const bombs = [];
+
+    function updateBombLabel() {
+        bombCountLabel.textContent = numBombs;
+    }
+
+    function findBombs() {
+        const coordinates = [];
+        for (let c = 0; c < width; c++) {
+            for (let r = 0; r < height; r++) {
+                coordinates.push({ r, c });
+            }
+        }
+        while (bombs.length < mines) {
+            const index = Math.floor(Math.random() * coordinates.length);
+            bombs.push(coordinates.splice(index, 1)[0]);
+        }
+    }
+
+    function countBombs(cell) {
+        const r = cell.r;
+        const c = cell.c;
+        let bomb_count = 0;
+
+        const neighbors = [
+            { r: r - 1, c: c - 1 }, { r: r - 1, c }, { r: r - 1, c: c + 1 },
+            { r, c: c - 1 }, { r, c: c + 1 },
+            { r: r + 1, c: c - 1 }, { r: r + 1, c }, { r: r + 1, c: c + 1 }
+        ];
+
+        neighbors.forEach(coord => {
+            if (coord.r >= 0 && coord.r < height && coord.c >= 0 && coord.c < width) {
+                if (bombs.some(bomb => bomb.r === coord.r && bomb.c === coord.c)) {
+                    bomb_count++;
+                }
+            }
+        });
+
+        return bomb_count;
+    }
+
+    function exposeCell(cell) {
+        const bombCount = countBombs(cell);
+        cell.element.classList.add('sunken');
+        const colormap = ['', 'blue', 'darkgreen', 'red', 'purple', 'maroon', 'cyan', 'black', 'dimgray'];
+
+        if (bombCount > 0) {
+            cell.element.textContent = bombCount;
+            cell.element.style.color = colormap[bombCount];
+        } else {
+            cell.element.textContent = '';
+            autoExpose(cell);
+        }
+    }
+
+    function autoExpose(cell) {
+        const r = cell.r;
+        const c = cell.c;
+
+        const neighbors = [
+            { r: r - 1, c: c - 1 }, { r: r - 1, c }, { r: r - 1, c: c + 1 },
+            { r, c: c - 1 }, { r, c: c + 1 },
+            { r: r + 1, c: c - 1 }, { r: r + 1, c }, { r: r + 1, c: c + 1 }
+        ];
+
+        neighbors.forEach(coord => {
+            if (coord.r >= 0 && coord.r < height && coord.c >= 0 && coord.c < width) {
+                const neighborCell = cells.find(cell => cell.r === coord.r && cell.c === coord.c);
+                if (!neighborCell.element.classList.contains('sunken') && !neighborCell.element.classList.contains('flagged')) {
+                    exposeCell(neighborCell);
+                }
+            }
+        });
+    }
+
+    function endGame() {
+        cells.forEach(cell => {
+            cell.element.removeEventListener('click', checkCell);
+            cell.element.removeEventListener('contextmenu', flagCell);
+            if (bombs.some(bomb => bomb.r === cell.r && bomb.c === cell.c)) {
+                cell.element.classList.add('bomb');
+            }
+        });
+        alert('KABOOM! You lose.');
+    }
+
+    function checkWinner() {
+        cells.forEach(cell => {
+            cell.element.removeEventListener('click', checkCell);
+            cell.element.removeEventListener('contextmenu', flagCell);
+        });
+        alert('Congratulations -- you won!');
+    }
+
+    function checkCell(event) {
+        const cell = event.target.cell;
+        if (cell.element.classList.contains('sunken') || cell.element.classList.contains('flagged')) return;
+
+        cell.element.classList.add('sunken');
+
+        if (bombs.some(bomb => bomb.r === cell.r && bomb.c === cell.c)) {
+            endGame();
+        } else if (copyBombs === 0) {
+            checkWinner();
+        } else {
+            exposeCell(cell);
+        }
+    }
+
+    function flagCell(event) {
+        event.preventDefault();
+        const cell = event.target.cell;
+        if (cell.element.classList.contains('sunken')) return;
+
+        if (cell.element.classList.contains('flagged')) {
+            cell.element.classList.remove('flagged');
+            if (bombs.some(bomb => bomb.r === cell.r && bomb.c === cell.c)) {
+                copyBombs++;
+                numBombs++;
+                updateBombLabel();
+            } else {
+                numBombs++;
+                updateBombLabel();
+            }
+        } else {
+            cell.element.classList.add('flagged');
+            if (bombs.some(bomb => bomb.r === cell.r && bomb.c === cell.c)) {
+                copyBombs--;
+                numBombs--;
+                updateBombLabel();
+            } else {
+                numBombs--;
+                updateBombLabel();
+            }
+        }
+    }
+
+    findBombs();
+
+    for (let r = 0; r < height; r++) {
+        for (let c = 0; c < width; c++) {
+            const cellElement = document.createElement('div');
+            cellElement.classList.add('cell');
+            const cell = { r, c, element: cellElement };
+            cellElement.cell = cell;
+            cellElement.addEventListener('click', checkCell);
+            cellElement.addEventListener('contextmenu', flagCell);
+            gameDiv.appendChild(cellElement);
+            cells.push(cell);
+        }
+    }
+</script>
+
+</body>
+</html>
