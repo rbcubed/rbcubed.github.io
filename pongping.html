@@ -10,7 +10,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #121212;
+            background-color: #677e83;
             color: #ffffff;
             font-family: Arial, sans-serif;
         }
@@ -26,16 +26,16 @@
         const ctx = canvas.getContext('2d');
         const SCREEN_WIDTH = 1000;
         const SCREEN_HEIGHT = 800;
-        let BALL_X_SPEED = 8 * (Math.random() < 0.5 ? -1 : 1);
-        let BALL_Y_SPEED = 8 * (Math.random() < 0.5 ? -1 : 1);
+        let BALL_X_SPEED = 10 * (Math.random() < 0.5 ? -1 : 1);
+        let BALL_Y_SPEED = 10 * (Math.random() < 0.5 ? -1 : 1);
         let PLAYER_SPEED = 0;
-        let PLAYER2_SPEED = 12;
+        let PLAYER2_SPEED = 19; // Faster AI paddle speed
         let score1 = 0;
         let score2 = 0;
         const game_font = '40px Arial';
         const winner1_text = 'Player Wins!';
         const winner2_text = 'AI Wins!';
-        const paddleSpeed = 10;
+        const paddleSpeed = 8;
         const maxScore = 11;
 
         function ball_animation() {
@@ -106,33 +106,30 @@
         const paddle1 = { x: SCREEN_WIDTH - 20, y: SCREEN_HEIGHT / 2 - 70, width: 10, height: 140 };
         const paddle2 = { x: 10, y: SCREEN_HEIGHT / 2 - 70, width: 10, height: 140 };
 
-        const bg_color = '#0f4c61'; // Darker ocean blue color
-        const white = '#ffffff'; // White color
-        const light_grey = '#ffffff'; // Light grey color
-        const orange = '#ff7f50'; // Orange color
+        const bg_color = '#121212';
+        const light_grey = '#c8c8c8';
+        const orange = '#ff7f50';
 
         function draw() {
             ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
             ball_animation();
             player_animation();
             ai_animation();
-            ctx.fillStyle = bg_color; // Set background color to darker ocean blue
-            ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            ctx.fillStyle = white; // Set paddle color to white
+            ctx.fillStyle = light_grey;
             ctx.fillRect(paddle1.x, paddle1.y, paddle1.width, paddle1.height);
             ctx.fillRect(paddle2.x, paddle2.y, paddle2.width, paddle2.height);
             ctx.fillStyle = orange;
             ctx.beginPath();
             ctx.ellipse(ball.x + ball.width / 2, ball.y + ball.height / 2, ball.width / 2, ball.height / 2, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = white; // Set middle line color to white
+            ctx.fillStyle = light_grey;
             ctx.beginPath();
             ctx.moveTo(SCREEN_WIDTH / 2, 0);
             ctx.lineTo(SCREEN_WIDTH / 2, SCREEN_HEIGHT);
             ctx.stroke();
             ctx.font = game_font;
-            ctx.fillText(score1, SCREEN_WIDTH / 2 + 20, 100);
-            ctx.fillText(score2, SCREEN_WIDTH / 2 - 40 - ctx.measureText(score2).width, 100);
+            ctx.fillText(score1, SCREEN_WIDTH / 2 + 20, 60);
+            ctx.fillText(score2, SCREEN_WIDTH / 2 - 40 - ctx.measureText(score2).width, 60);
         }
 
         function handleKeyDown(e) {
