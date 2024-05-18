@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reversi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 1px;
+            background-color: black;
+        }
+        .square {
+            width: 50px;
+            height: 50px;
+            background-color: mediumseagreen;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .piece {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .piece.black {
+            background-color: black;
+        }
+        .piece.white {
+            background-color: white;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .controls .score, .controls .turn {
+            margin: 5px;
+            font-size: 18px;
+        }
+        .controls button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game">
+        <div id="board" class="board"></div>
+        <div class="controls">
+            <div id="turn" class="turn">Turn: <span id="current-player">Black</span></div>
+            <div class="score">Black: <span id="black-score">2</span> White: <span id="white-score">2</span></div>
+            <button id="pass-button" disabled>Pass</button>
+        </div>
+    </div>
+
+    <script>
+        class ReversiBoard {
+            constructor() {
+                this.board = {};
+                for (let row = 0; row < 8; row++) {
+                    for (let column = 0; column < 8; column++) {
+                        this.board[[row, column]] = null;
+                    }
+                }
+                this.board[[3, 3]] = 1;
+                this.board[[4, 4]] = 1;
+                this.board[[3, 4]] = 0;
+                this.board[[4, 3]] = 0;
+                this.currentPlayer = 0;
+                this.endgame = null;
+            }
+
+            get_piece(coords) {
+                return this.board[coords];
+            }
+
+            get_endgame() {
+                return this.endgame;
+            }
+
+            get_player() {
+                return this.currentPlayer;
+            }
+
+            next_player() {
+                this.currentPlayer = 1 - this.currentPlayer;
+            }
+
+            get_scores() {
+                const pieces = Object.values(this.board);
+                return [pieces.filter(p => p === 0).length, pieces.filter(p => p === 1).length];
+            }
+
+            flip_pieces(coords, checkingOnly = false) {
+                const thisPlayer = this.currentPlayer;
+                const otherPlayer = 1 - thisPlayer;
+                let flipped = 0;
+
+                for (let dr of [-1, 0, 1]) {
+                    for (let dc of [-1, 0, 1]) {
+                        if (dr === 0 && dc === 0) continue;
+                        let row = coords[0] + dr;
+                        let col = coords[1] + dc;
+                        let counter = 0;
+
+                        while (0 <= row && row < 8 && 0 <= col && col < 8 && this.board[[row, col]] === otherPlayer) {
+                            row += dr;
+                            col += dc;
+                            counter++;
+                        }
+
+                        if (0 <= row && row < 8 && 0 <= col && col < 8 && this.board[[row, col]] === thisPlayer) {
+                            flipped += counter;
+                            if (!checkingOnly) {
+                                for (let i = 1; i <= counter; i++) {
+                                    this.board[[coords[0] + i * dr, coords[1] + i * dc]] = thisPlayer;
+                                }
+                            }
+                        }
+                    }
+                }
+                return flipped;
+            }
+
+            get_legal_moves() {
+                const moves = [];
+                for (let row = 0; row < 8; row++) {
+                    for (let column = 0; column < 8; column++) {
+                        const coords = [row, column];
+                        if (this.board[coords] === null && this.flip_pieces(coords, true) > 0) {
+                            moves.push(coords);
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            try_move(coords) {
+                if (this.board[coords] !== null) return false;
+                const numFlipped = this.flip_pieces(coords);
+                if (numFlipped > 0) {
+                    this.board[coords] = this.currentPlayer;
+                    this.next_player();
+                    this.check_endgame();
+                }
+                return numFlipped > 0;
+            }
+
+            evaluate_coordinate(coords) {
+                const coordValues = [
+                    [99, -8, 8, 6, 6, 8, -8, 99],
+                    [-8, -24, -4, -3, -3, -4, -24, -8],
+                    [8, -4, 7, 4, 4, 7, -4, 8],
+                    [6, -3, 4, 0, 0, 4, -3, 6],
+                    [6, -3, 4, 0, 0, 4, -3, 6],
+                    [8, -4, 7, 4, 4, 7, -4, 8],
+                    [-8, -24, -4, -3, -3, -4, -24, -8],
+                    [99, -8, 8, 6, 6, 8, -8, 99]
+                ];
+                return coordValues[coords[0]][coords[1]];
+            }
+
+            computer_turn() {
+                const legalMoves = this.get_legal_moves();
+                if (legalMoves.length === 0) {
+                    this.next_player();
+                } else {
+                    const [value, move] = this.minimax(4);
+                    this.try_move(move);
+                }
+            }
+
+            branch(move) {
+                const newBoard = new ReversiBoard();
+                newBoard.board = { ...this.board };
+                newBoard.currentPlayer = this.get_player();
+                newBoard.endgame = this.get_endgame();
+                newBoard.try_move(move);
+                return newBoard;
+            }
+
+            minimax(depth = 1) {
+                const legalMoves = this.get_legal_moves();
+                if (legalMoves.length === 0) return [0, null];
+
+                let bestMoveValue = -999;
+                let bestMoves = [];
+
+                for (let move of legalMoves) {
+                    let moveValue = this.evaluate_coordinate(move);
+                    if (depth > 1) {
+                        const newBoard = this.branch(move);
+                        const [oppValue] = newBoard.minimax(depth - 1);
+                        moveValue -= oppValue;
+                    }
+
+                    if (moveValue > bestMoveValue) {
+                        bestMoves = [move];
+                        bestMoveValue = moveValue;
+                    } else if (moveValue === bestMoveValue) {
+                        bestMoves.push(move);
+                    }
+                }
+
+                return [bestMoveValue, bestMoves[Math.floor(Math.random() * bestMoves.length)]];
+            }
+
+            check_endgame() {
+                if (this.get_legal_moves().length === 0) {
+                    this.next_player();
+                    if (this.get_legal_moves().length === 0) {
+                        const scores = this.get_scores();
+                        if (scores[0] > scores[1]) {
+                            this.endgame = 0;
+                        } else if (scores[0] < scores[1]) {
+                            this.endgame = 1;
+                        } else {
+                            this.endgame = 'draw';
+                        }
+                    }
+                    this.next_player();
+                }
+            }
+        }
+
+        class ReversiGame {
+            constructor(computerPlayer = null) {
+                this.colors = ['black', 'white'];
+                this.board = new ReversiBoard();
+                this.squares = {};
+                this.computerPlayer = this.colors.indexOf(computerPlayer);
+
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                for (let row = 0; row < 8; row++) {
+                    for (let column = 0; column < 8; column++) {
+                        const square = document.createElement('div');
+                        square.className = 'square';
+                        square.dataset.position = `${row},${column}`;
+                        square.addEventListener('click', this.get_click.bind(this));
+                        this.squares[[row, column]] = square;
+                        boardElement.appendChild(square);
+                    }
+                }
+
+                this.passButton = document.getElementById('pass-button');
+                this.passButton.addEventListener('click', this.pass_move.bind(this));
+
+                this.update_display();
+            }
+
+            get_click(event) {
+                const [row, column] = event.target.dataset.position.split(',').map(Number);
+                if (this.board.get_player() !== this.computerPlayer && this.board.try_move([row, column])) {
+                    this.update_display();
+                }
+            }
+
+            pass_move() {
+                this.board.next_player();
+                this.update_display();
+            }
+
+            take_computer_turn() {
+                this.board.computer_turn();
+                this.update_display();
+            }
+
+            update_display() {
+                for (let row = 0; row < 8; row++) {
+                    for (let column = 0; column < 8; column++) {
+                        const square = this.squares[[row, column]];
+                        const piece = this.board.get_piece([row, column]);
+                        square.innerHTML = '';
+                        if (piece !== null) {
+                            const pieceElement = document.createElement('div');
+                            pieceElement.className = `piece ${this.colors[piece]}`;
+                            square.appendChild(pieceElement);
+                        }
+                    }
+                }
+
+                const newPlayer = this.board.get_player();
+                document.getElementById('current-player').textContent = this.colors[newPlayer].charAt(0).toUpperCase() + this.colors[newPlayer].slice(1);
+                const scores = this.board.get_scores();
+                document.getElementById('black-score').textContent = scores[0];
+                document.getElementById('white-score').textContent = scores[1];
+
+                if (this.board.get_legal_moves().length === 0) {
+                    this.passButton.disabled = false;
+                } else {
+                    this.passButton.disabled = true;
+                }
+
+                const endgame = this.board.get_endgame();
+                if (endgame !== null) {
+                    let endgameMessage;
+                    if (typeof endgame === 'number') {
+                        const winner = this.colors[endgame];
+                        endgameMessage = `${winner.charAt(0).toUpperCase() + winner.slice(1)} wins!`;
+                    } else {
+                        endgameMessage = "It's a tie!";
+                    }
+                    alert(endgameMessage);
+                } else if (this.board.get_player() === this.computerPlayer) {
+                    setTimeout(this.take_computer_turn.bind(this), 1000);
+                }
+            }
+        }
+
+        function play_reversi(computerPlayer = null) {
+            new ReversiGame(computerPlayer);
+        }
+
+        window.onload = () => {
+            play_reversi('white');
+        };
+    </script>
+</body>
+</html>
