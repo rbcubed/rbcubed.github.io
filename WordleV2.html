@@ -13105,7 +13105,7 @@
         }
 
         document.getElementById("guessButton").addEventListener("click", function() {
-            if (currguess >= 7) {
+            if (currguess >= 6) {
                 alert("You've reached the maximum number of guesses.");
                 return;
             }
@@ -13169,7 +13169,7 @@
             if (guess === word) {
                 document.getElementById("win-message").style.display = "block";
                 document.getElementById("inputWord").disabled = true; // Disable input box
-            } else if (currguess >= 7) {
+            } else if (currguess >= 6) {
                 setTimeout(() => {
                     alert("You Lost! The word was: " + word);
                 }, 10);
